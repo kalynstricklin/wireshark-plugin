@@ -1,7 +1,7 @@
 from scapy.all import rdpcap
 import pandas as pd
 
-from model.backend import random_forest_predict
+from model.backend import random_forest_predict, db_scan_cluster
 
 if __name__ == "__main__":
     def main():
@@ -90,4 +90,10 @@ if __name__ == "__main__":
         random_forest_predict(".././data/labeled/labeled_dns.csv", 'rf_suspicion_model_dns.pkl')
         # random_forest_predict(".././data/labeled/label_teardrop.csv") //might be bad
         random_forest_predict(".././data/labeled/label_smb-on-windows-10.csv", 'rf_suspicion_model_teardrop.pkl')
+
+        labels, clusters, noise = db_scan_cluster(".././data/labeled/labeled_dns.csv")
+        print(f"Labels {labels}, Clusters: {clusters}, Noise: {noise}")
+        # db_scan_cluster(".././data/labeled/label_teardrop.csv") //might be bad
+        labels, clusters, noise = db_scan_cluster(".././data/labeled/label_smb-on-windows-10.csv")
+        print(f"Labels {labels}, Clusters: {clusters}, Noise: {noise}")
     main()

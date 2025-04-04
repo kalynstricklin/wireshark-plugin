@@ -10,10 +10,6 @@ import pandas as pd
 import numpy as np
 import joblib
 
-# read in csv data
-df = pd.read_csv('.././data/labeled/labeled_dns.csv')
-df_clean = df.drop(columns=['Source', 'Destination', 'Info', 'Protocol', 'No.', 'Time'], errors='ignore')
-
 
 '''
   Random Forest Prediction
@@ -64,9 +60,14 @@ def random_forest_predict(file_name, pkl_file_name):
     DBSCAN Clustering Algorithm
 '''
 
-def db_scan_cluster():
+def db_scan_cluster(file_name):
+    df = pd.read_csv(file_name)
+    df_clean = df.drop(columns=['Source', 'Destination', 'Info', 'Protocol', 'No.', 'Time'], errors='ignore')
 
-    X = df.drop(['TARGET'], axis=1)
+    if 'Suspicious' not in df_clean.columns:
+        raise ValueError("Missing 'Suspicious' column in dataset.")
+
+    X = df_clean.drop(['Suspicious'], axis=1)
 
     scaler = StandardScaler()
     X_scaled = scaler.fit_transform(X)
@@ -80,4 +81,7 @@ def db_scan_cluster():
 
     print("Estimated number of clusters: %d" % n_clusters)
     print("Estimated number of noise points: %d" % n_noise)
+    return labels, n_clusters, n_noise
+
+
 
