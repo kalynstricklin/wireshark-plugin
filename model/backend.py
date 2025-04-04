@@ -8,20 +8,25 @@ from sklearn.preprocessing import StandardScaler
 
 import pandas as pd
 import numpy as np
-
+import joblib
 
 # read in csv data
-df = pd.read_csv('data.csv')
-df
+df = pd.read_csv('.././data/labeled/labeled_dns.csv')
+df_clean = df.drop(columns=['Source', 'Destination', 'Info', 'Protocol', 'No.', 'Time'], errors='ignore')
+
 
 '''
   Random Forest Prediction
 '''
-def random_forest_predict():
-    # TODO: Replace with actual feature columns and target column
-    X = df.drop(['TARGET'], axis=1)
-    y= df['TARGET']
-    
+def random_forest_predict(file_name, pkl_file_name):
+
+# read in csv data
+    df = pd.read_csv(file_name)
+    df_clean = df.drop(columns=['Source', 'Destination', 'Info', 'Protocol', 'No.', 'Time'], errors='ignore')
+
+    X = df_clean.drop(['Suspicious'], axis=1)
+    y = df_clean['Suspicious']
+
     # train and test split
     X_train, X_test, y_train, y_test = train_test_split(X,y)
 
@@ -41,8 +46,6 @@ def random_forest_predict():
         n_jobs=-1,
         scoring="accuracy"
     )
-    # clr = RandomForestClassifier()
-    # clr.fit(X_train, y_train)
 
     grid_search.fit(X_train, y_train)
     best_model = grid_search.best_estimator_
@@ -54,6 +57,7 @@ def random_forest_predict():
     print("Confusion Matrix:\n", confusion_matrix(y_test, y_pred))
     print("Classification Report:\n", classification_report(y_test, y_pred))
 
+    joblib.dump(best_model, pkl_file_name)
 
 
 '''
