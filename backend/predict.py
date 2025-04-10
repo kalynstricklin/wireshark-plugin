@@ -15,4 +15,4 @@ def predict_rf(model_file, new_data, output_file):
     print(f"Predictions saved to {output_file}")
 
 if __name__ =="__main__":
-    predict_rf("model/model.pkl", "new_data.csv", "predictions.csv")
+    predict_rf("model/model.pkl", "data/new_data.csv", "predictions/predictions.csv")
