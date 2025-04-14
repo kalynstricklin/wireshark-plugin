@@ -1,0 +1,3 @@
+[submodule "plugin/Wireshark-Data-to-CSV-Lua-Plugin"]
+	path = plugin/Wireshark-Data-to-CSV-Lua-Plugin
+	url = https://github.com/ChargerCoding/Wireshark-Data-to-CSV-Lua-Plugin.git
