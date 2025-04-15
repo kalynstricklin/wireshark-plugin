@@ -19,8 +19,13 @@ def label_file(csv_in, csv_out):
     df.to_csv(csv_out, index=False)
 
 
-# train model using Random Forest
 def train_rf(labeled_csv, model_out):
+    '''
+    Train combined pcap files 
+    :param labeled_csv:
+    :param model_out:
+    :return:
+    '''
     df = pd.read_csv(labeled_csv)
     df_clean = df.drop(columns=['Source', 'Destination', 'Info', 'Protocol', 'No.', 'Time'], errors='ignore')
 
@@ -48,7 +53,30 @@ def train_rf(labeled_csv, model_out):
     joblib.dump(best_model, model_out)
 
 
-if __name__ == "__main__":
+def predict_rf(model_file, new_data, output_file):
+    '''
+    Predicts if a packet is suspicious based on previously trained pcap files
+    :param model_file:
+    :param new_data:
+    :param output_file:
+    :return:
+    '''
+    df = pd.read_csv(new_data)
+    df_clean = df.drop(columns=['Source', 'Destination', 'Info', 'Protocol', 'No.', 'Time'], errors='ignore')
+
+    X_new = df_clean.drop('Suspicious', axis=1, errors='ignore')
+    model = joblib.load(model_file)
+
+    predictions = model.predict(X_new)
+    df['Predicted'] = predictions
+    df.to_csv(output_file, index=False)
+    print(f"Predictions saved to {output_file}")
+
+def main():
     unlabeled_csv = "data/unlabeled.csv"
     label_file(unlabeled_csv, "data/labeled.csv")
     train_rf("data/labeled.csv", "model/model.pkl")
+    predict_rf("model/model.pkl", "data/new_data.csv", "predictions/predictions.csv")
+
+if __name__ == "__main__":
+    main()
