@@ -21,7 +21,7 @@ def label_file(csv_in, csv_out):
 
 def train_rf(labeled_csv, model_out):
     '''
-    Train combined pcap files 
+    Train combined pcap files
     :param labeled_csv:
     :param model_out:
     :return:

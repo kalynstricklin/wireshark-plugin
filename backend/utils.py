@@ -7,16 +7,7 @@ from scapy.all import rdpcap
 import pandas as pd
 
 
-# def plot_feature_important(model, feature_names):
-#     importance = model.feature_importances_
-#     sorted_idx = np.argsort(importance)[::-1]
-#
-#     plt.figure(figsize=(10, 6))
-#     plt.bar(range(len(importance)), importance[sorted_idx])
-#     plt.xticks(range(len(importance)), [feature_names[i] for i in sorted_idx], rotation=90)
-#     plt.title("Feature Importances from Random Forest")
-#     plt.tight_layout()
-#     plt.show()
+
 
 
 def inspect_packets(pcap_path):
@@ -60,9 +51,3 @@ def is_suspicious(row):
         return 1
     return 0
 
-
-
-# def run_models_clustering(csv_path, model_path):
-#     train_rf(csv_path, model_path)
-#     labels, clusters, noise, X_scaled = dbscan_cluster(csv_path)
-#     print(f"Labels {labels}, Clusters: {clusters}, Noise: {noise}, Xscaled: {X_scaled}")
