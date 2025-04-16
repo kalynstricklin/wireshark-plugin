@@ -3,23 +3,19 @@ import matplotlib
 matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt
 import numpy as np
-from scapy.all import rdpcap
-import pandas as pd
-
-
-
-
-
-def inspect_packets(pcap_path):
-    # "../data/raw/dns-remoteshell.pcap"
-    packets = rdpcap(pcap_path)  # reads in the .pcap file and returns the list of packets
-
-    # iterate through each packet in the list
-    for packet in packets:
-        print(packet.summary())
-
-        if (packet.haslayer("IP")):
-            print("Source IP: ", packet["IP"].src)
+# from scapy.all import rdpcap
+# import pandas as pd
+#
+# def inspect_packets(pcap_path):
+#     # "../data/raw/dns-remoteshell.pcap"
+#     packets = rdpcap(pcap_path)  # reads in the .pcap file and returns the list of packets
+#
+#     # iterate through each packet in the list
+#     for packet in packets:
+#         print(packet.summary())
+#
+#         if (packet.haslayer("IP")):
+#             print("Source IP: ", packet["IP"].src)
 
 
 # function to tag sus packets

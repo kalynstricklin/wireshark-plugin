@@ -20,13 +20,11 @@ def label_file(csv_in, csv_out):
 
 
 def train_rf(labeled_csv, model_out):
-    '''
-    Train combined pcap files
-    :param labeled_csv:
-    :param model_out:
-    :return:
-    '''
     df = pd.read_csv(labeled_csv)
+
+    print("\n Before Cleaning: ")
+    print(df[['Source', "Destination", 'Info', "Protocol", "No.", "Time"]].head())
+
     df_clean = df.drop(columns=['Source', 'Destination', 'Info', 'Protocol', 'No.', 'Time'], errors='ignore')
 
     X = df_clean.drop('Suspicious', axis=1)
@@ -34,10 +32,10 @@ def train_rf(labeled_csv, model_out):
     X_train, X_test, y_train, y_test = train_test_split(X, y, stratify=y, test_size=0.3, random_state=42)
 
     param_grid = {
-        'n_estimators': [100],
-        'max_depth': [None],
-        'min_samples_split': [2],
-        'min_samples_leaf': [1]
+        'n_estimators': [100, 200],
+        'max_depth': [None, 10, 20],
+        'min_samples_split': [2, 5],
+        'min_samples_leaf': [1, 2]
     }
 
     grid_search = GridSearchCV(RandomForestClassifier(), param_grid, cv=5, scoring="accuracy", n_jobs=-1)
@@ -54,13 +52,6 @@ def train_rf(labeled_csv, model_out):
 
 
 def predict_rf(model_file, new_data, output_file):
-    '''
-    Predicts if a packet is suspicious based on previously trained pcap files
-    :param model_file:
-    :param new_data:
-    :param output_file:
-    :return:
-    '''
     df = pd.read_csv(new_data)
     df_clean = df.drop(columns=['Source', 'Destination', 'Info', 'Protocol', 'No.', 'Time'], errors='ignore')
 
@@ -73,10 +64,13 @@ def predict_rf(model_file, new_data, output_file):
     print(f"Predictions saved to {output_file}")
 
 def main():
+    print("Initializing Wireshark Plugin Suspicious Packet prediction model...")
+
     unlabeled_csv = "data/unlabeled.csv"
+
     label_file(unlabeled_csv, "data/labeled.csv")
     train_rf("data/labeled.csv", "model/model.pkl")
-    predict_rf("model/model.pkl", "data/new_data.csv", "predictions/predictions.csv")
+    predict_rf("model/model.pkl", "data/packets.csv", "predictions/predictions.csv")
 
 if __name__ == "__main__":
     main()
