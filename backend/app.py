@@ -70,7 +70,7 @@ def main():
 
     label_file(unlabeled_csv, "data/labeled.csv")
     train_rf("data/labeled.csv", "model/model.pkl")
-    predict_rf("model/model.pkl", "data/packets.csv", "predictions/predictions.csv")
+    predict_rf("../docs/model.pkl", "data/packets.csv", "predictions/predictions.csv")
 
 if __name__ == "__main__":
     main()

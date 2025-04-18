@@ -2,6 +2,7 @@
 <project version="4">
   <component name="VcsDirectoryMappings">
     <mapping directory="" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/gui/cs480-gui" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/plugin/Wireshark-Data-to-CSV-Lua-Plugin" vcs="Git" />
   </component>
 </project>

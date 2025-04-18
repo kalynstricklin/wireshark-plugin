@@ -17,7 +17,7 @@ from sklearn.metrics import classification_report, confusion_matrix, accuracy_sc
 from win10toast import ToastNotifier
 from PIL import Image
 
-MODEL_PATH = "model/model.pkl"
+MODEL_PATH = "./model/model.pkl"
 DATA_PATH = "data/packets.csv"
 TRAINING_DATA_PATH = "data/labeled.csv"
 
@@ -28,8 +28,8 @@ def label_data(df):
 
 
 def clean_data(df):
-    print("\n Starting Cleaning: ")
-
+    print("\n Before Cleaning: ")
+    print(df.columns)
     df_clean = df.drop(columns=['Source', 'Destination', 'Info', 'Protocol', 'No.', 'Time'], errors='ignore')
     df_clean.dropna(inplace=True)
 
@@ -51,7 +51,8 @@ def train_and_evaluate(df):
         'n_estimators': [100, 200],
         'max_depth': [None, 10, 20],
         'min_samples_split': [2, 5],
-        'min_samples_leaf': [1, 2]
+        'min_samples_leaf': [1, 2],
+        'max_features': ['sqrt', 'log2'],
     }
 
     # == Training ==
@@ -69,16 +70,17 @@ def train_and_evaluate(df):
     print(classification_report(y_test, y_pred))
 
     # save model to pkl file
-    joblib.dump(best_model, MODEL_PATH)
-    print(f"Model saved to {MODEL_PATH}")
+    joblib.dump(best_model, "./model/model.pkl")
+    print(f"Model saved to model/model.pkl")
 
 
 def predict_packets(df):
     print("\n Making Predictions on new  dataset")
 
-    X = df.drop('Suspicious', axis=1, errors='ignore')
+    if 'Suspicious' in df.columns:
+        df = df.drop('Suspicious', axis=1, errors='ignore')
     model = joblib.load(MODEL_PATH)
-    prediction = model.predict(X)
+    prediction = model.predict(df)
     df['Prediction'] = prediction
     df.to_csv("predictions.csv", index=False)
 
@@ -88,38 +90,36 @@ def predict_packets(df):
 def main():
     print("Initializing Wireshark Plugin Suspicious Packet prediction model...")
 
-    if not os.path.exists(MODEL_PATH):
-        print("No model found. Training with labeled dataset.")
+    # if not os.path.exists(MODEL_PATH):
+    #     print("No model found. Training with labeled dataset.")
+    #
+    #     df = pd.read_csv(TRAINING_DATA_PATH)
+    #     df = label_data(df)
+    #     df_clean = clean_data(df)
+    #     train_and_evaluate(df_clean)
 
-        df = pd.read_csv(TRAINING_DATA_PATH)
-        df = label_data(df)
-        df_clean = clean_data(df)
-        train_and_evaluate(df_clean)
-
-    print("\n Starting Predictions...")
+    print("\nStarting Predictions...")
 
     if not os.path.exists(DATA_PATH):
         print(f"No packet data found at {DATA_PATH}")
         return
 
-    print("\n Loading new data to predict...")
+    print("\nLoading new data to predict...")
     df_new = pd.read_csv(DATA_PATH)
     df_new_clean = clean_data(df_new)
+
+    if df_new_clean.empty:
+        print("No data after cleaning. Aborting...");
+        return
     df_predicted = predict_packets(df_new_clean)
 
+    print(df_predicted)
+
     # # when making predictions if a value is predicted as sus then it should send an alert
-    # toaster = ToastNotifier()
-    for index, row in df_predicted.iterrows():
-
-    # file_name = "network.png"
-    # img = Image.open(file_name)
-    # img.save('network.ico')
+    # for index, row in df_predicted.iterrows():
     #
-    # file_name = "network.ico"
-
-        if int(row["Prediction"]) == 1:
-            print()
-    # toaster.show_toast("ALERT", 'Suspicious traffic detected!', icon_path=file_name, duration=2)
+    #     if int(row["Prediction"]) == 1:
+    #         print()
 
 if __name__ == "__main__":
     main()
