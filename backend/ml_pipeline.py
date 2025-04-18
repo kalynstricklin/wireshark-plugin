@@ -108,15 +108,17 @@ def main():
     df_predicted = predict_packets(df_new_clean)
 
     # # when making predictions if a value is predicted as sus then it should send an alert
-    toaster = ToastNotifier()
-    # for index, row in df_predicted.iterrows():
+    # toaster = ToastNotifier()
+    for index, row in df_predicted.iterrows():
 
-    file_name = "network.png"
-    img = Image.open(file_name)
-    img.save('network.ico')
+    # file_name = "network.png"
+    # img = Image.open(file_name)
+    # img.save('network.ico')
+    #
+    # file_name = "network.ico"
 
-    file_name = "network.ico"
-        # if int(row["Prediction"]) == 1:
+        if int(row["Prediction"]) == 1:
+            print()
     # toaster.show_toast("ALERT", 'Suspicious traffic detected!', icon_path=file_name, duration=2)
 
 if __name__ == "__main__":

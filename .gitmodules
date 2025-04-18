@@ -1,3 +1,6 @@
 [submodule "plugin/Wireshark-Data-to-CSV-Lua-Plugin"]
 	path = plugin/Wireshark-Data-to-CSV-Lua-Plugin
 	url = https://github.com/ChargerCoding/Wireshark-Data-to-CSV-Lua-Plugin.git
+[submodule "gui/cs480-gui"]
+	path = gui/cs480-gui
+	url = https://github.com/kalynstricklin/cs480-gui.git

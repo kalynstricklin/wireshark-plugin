@@ -1,1 +1,2 @@
-"C:\Program Files\Wireshark\Wireshark.exe"
+cd "C:\Program Files\Wireshark"
+./tshark.exe
