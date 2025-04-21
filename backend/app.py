@@ -1,4 +1,5 @@
 import os.path
+import getopt, sys
 
 import joblib
 import pandas as pd
@@ -80,7 +81,7 @@ def predict_packets(df):
 
     prediction = model.predict(df)
     df['Prediction'] = prediction
-    df.to_csv(PREDICTED_OUT_PATH, index=False)
+    df.to_csv(PREDICTED_OUT_PATH, index=True)
     print(f"Predictions saved to {PREDICTED_OUT_PATH}")
     return df
 
@@ -91,49 +92,56 @@ def predict_packets(df):
 
 
 def main():
+    args_length = len(sys.argv)
+    args_list = sys.argv[1:]
 
-    isAnalyzing = True
-    mode = 'realtime'
+    if args_length == 1:
+        print("Please enter a command line argument")
+        sys.exit(0)
 
-    print("==== Starting Packet Predictions ====")
-    if mode == 'realtime':
-        print("=== Real-Time ===")
+    options = "rf:"
 
-        df = pd.DataFrame(data=None, columns=['No.', 'Time', 'Source', 'Destination', 'Protocol', 'Length', 'Info'])
+    long_options = ["realtime", "file="]
 
-        while(isAnalyzing):
-            packet = input()
+    try:
+        opts, args = getopt.getopt(args_list, options, long_options)
 
-            # packet = "9,2.003091,10.0.0.45,224.0.0.22,IGMPv3,54,Membership Report / Join group 224.0.0.251 for any sources"
+        for opt, arg in opts:
+            if opt in ("-r", "--realtime"):
+                df = pd.DataFrame(data=None, columns=['No.', 'Time', 'Source', 'Destination', 'Protocol', 'Length', 'Info'])
 
-            item = packet.split(",")
-            print(item)
-            df.loc[0, 'No.'] = item[0]
-            df.loc[0, 'Time'] = item[1]
-            df.loc[0, 'Source'] = item[2]
-            df.loc[0, 'Destination'] = item[3]
-            df.loc[0, 'Protocol'] = item[4]
-            df.loc[0, 'Length'] = item[5]
-            df.loc[0, 'Info'] = item[6]
+                while (True):
+                    packet = input()
 
-            predict_rt(df)
+                    # packet = "9,2.003091,10.0.0.45,224.0.0.22,IGMPv3,54,Membership Report / Join group 224.0.0.251 for any sources"
 
-    elif mode == 'file':
-        print(" == Batch File ==")
+                    item = packet.split(",")
+                    print(item)
+                    df.loc[0, 'No.'] = item[0]
+                    df.loc[0, 'Time'] = item[1]
+                    df.loc[0, 'Source'] = item[2]
+                    df.loc[0, 'Destination'] = item[3]
+                    df.loc[0, 'Protocol'] = item[4]
+                    df.loc[0, 'Length'] = item[5]
+                    df.loc[0, 'Info'] = item[6]
 
-        if not os.path.exists(DATA_PATH):
-            print(f"No packet data found at {DATA_PATH}")
-            return
+                    predict_rt(df)
+            elif opt in ("-f", "--file"):
+                if not os.path.exists(arg):
+                    print(f"No packet data found at {arg}")
+                    return
 
-        df = pd.read_csv(DATA_PATH)
-        df_clean = clean_data(df)
+                df = pd.read_csv(arg)
+                df_clean = clean_data(df)
 
-        if df_clean.empty:
-            print("No usable data after cleaning.")
-            return
+                if df_clean.empty:
+                    print("No usable data after cleaning.")
+                    return
 
-        df_predicted = predict_packets(df_clean)
-        print(df_predicted)
+                df_predicted = predict_packets(df_clean)
+                print(df_predicted)
+    except getopt.error as err:
+        print(str(err))
 
 
 if __name__ == "__main__":

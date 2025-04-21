@@ -2,3 +2,5 @@ pandas==2.2.3
 numpy==2.2.2
 matplotlib==3.10.0
 scapy===2.6.1
+joblib
+scikit-learn
