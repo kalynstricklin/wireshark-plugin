@@ -1,32 +1,20 @@
 import os.path
-import time
-import asyncio
+
 import joblib
-import matplotlib
 import pandas as pd
-from sklearn.model_selection import GridSearchCV
-
-from backend.utils import is_suspicious
-
-matplotlib.use('TkAgg')
-
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.model_selection import train_test_split
-from sklearn.metrics import classification_report, confusion_matrix, accuracy_score, f1_score
 
 MODEL_PATH = "./model/model.pkl"
 DATA_PATH = "data/packets1.csv"
-TRAINING_DATA_PATH = "data/labeled.csv"
 PREDICTED_OUT_PATH = "predictions/predictions.csv"
 
+# load pre-trained model
+model = joblib.load(MODEL_PATH)
 
-def label_data(df):
-    df['Suspicious'] = df.apply(is_suspicious, axis=1)
-    return df
+last_timestamp = 0
 
 
 def clean_data(df):
-    print("\n Before Cleaning: ")
+    print("=== Cleaning Data ===")
     print(df.columns)
     df_clean = df.drop(columns=['Source', 'Destination', 'Protocol', 'Info', 'No.'], errors='ignore')
 
@@ -39,63 +27,57 @@ def clean_data(df):
     df_clean['flag_rst_ack'] = df['Info'].str.contains(r'\[rst, ack\]', case=False, na=False).astype(int)
     df_clean['flag_syn'] = df['Info'].str.contains(r'\[syn\]', case=False, na=False).astype(int)
 
-    # Add a column to calculate the time between the previous packet and the next packet
+    # Add a column to calculate the time between the previous packet and the next packet (default is previous packet)
     if 'Time' in df_clean.columns:
         df_clean['Time'] = pd.to_numeric(df_clean['Time'], errors='coerce')
         df_clean['Time_Delta'] = df_clean['Time'].diff().fillna(0)
 
     df_clean.dropna(inplace=True)
 
-    print("\n After Cleaning: ")
+    print("=== After Cleaning: ===")
     print(df_clean.head())
     return df_clean
 
 
-def train_and_evaluate(df):
-    print("\n Training Model...")
+def clean_row(df):
+    # takes a row as a string? so convert it to a dataframe
+    # df = pd.DataFrame([row])
+    df_clean = df.drop(columns=['Source', 'Destination', 'Protocol', 'Info', 'No.'], errors='ignore')
+    # add the columns
+    df_clean['Protocol_Code'] = df['Protocol'].astype('category').cat.codes
+    df_clean['flag_rst_ack'] = df['Info'].str.contains(r'\[rst, ack\]', case=False, na=False).astype(int)
+    df_clean['flag_syn'] = df['Info'].str.contains(r'\[syn\]', case=False, na=False).astype(int)
+    df_clean['Time'] = pd.to_numeric(df['Time'], errors='coerce')
+    # use global last time from previous packet to calculate the time delta
+    df_clean['Time_Delta'] = df_clean['Time'] - last_timestamp
 
-    # == Preprocessing ==
-    X = df.drop('Suspicious', axis=1)
-    y = df['Suspicious']
+    update_timestamp(df_clean)
+    df_clean.dropna(inplace=True)
+    return df_clean
 
-    X_train, X_test, y_train, y_test = train_test_split(X, y, stratify=y, test_size=0.3, random_state=42)
 
-    param_grid = {
-        'n_estimators': [100, 200],
-        'max_depth': [None, 10, 20],
-        'min_samples_split': [2, 5],
-        'min_samples_leaf': [1, 2],
-        'max_features': ['sqrt', 'log2'],
-    }
+def update_timestamp(df_clean):
+    global last_timestamp
+    last_timestamp = df_clean['Time']
 
-    # == Training ==
-    grid_search = GridSearchCV(RandomForestClassifier(), param_grid, cv=5, scoring="accuracy", n_jobs=-1)
-    grid_search.fit(X_train, y_train)
 
-    # model predictions
-    best_model = grid_search.best_estimator_
-    y_pred = best_model.predict(X_test)
+def predict_rt(row):
+    print("Starting Real-Time prediction...")
 
-    print("\nModel Performance:")
-    print(f"Accuracy: {accuracy_score(y_test, y_pred):.2f}")
-    print(confusion_matrix(y_test, y_pred))
-    print(f"f1 score: {f1_score(y_test, y_pred)}")
-    print(classification_report(y_test, y_pred))
-
-    # save model to pkl file
-    joblib.dump(best_model, "./model/model.pkl")
-    print(f"Model saved to model/model.pkl")
+    # clean row (cannot do change in time between packets because only 1 row)
+    df_clean = clean_row(row)
+    print("rt clean", df_clean)
+    if not df_clean.empty:
+        prediction = model.predict(df_clean)[0]
+        print(f"RT Prediction: {prediction}")
 
 
 def predict_packets(df):
-    print("\n Making Predictions on new  dataset")
+    print("=== Starting Batch File Predictions ===")
 
     if 'Suspicious' in df.columns:
         df = df.drop('Suspicious', axis=1, errors='ignore')
 
-    # load model
-    model = joblib.load(MODEL_PATH)
-    print("Model loaded, getting ready for predictions")
     prediction = model.predict(df)
     df['Prediction'] = prediction
     df.to_csv(PREDICTED_OUT_PATH, index=False)
@@ -103,39 +85,55 @@ def predict_packets(df):
     return df
 
 
+# param = mode
+# need to get real time to do a loop.....
+# def main():
+
+
 def main():
-    print("Initializing Wireshark Plugin Suspicious Packet prediction model...")
 
-    if not os.path.exists(MODEL_PATH):
-        print("No model found. Training with labeled dataset.")
+    isAnalyzing = True
+    mode = 'realtime'
 
-        df = pd.read_csv(TRAINING_DATA_PATH)
-        df = label_data(df)
+    print("==== Starting Packet Predictions ====")
+    if mode == 'realtime':
+        print("=== Real-Time ===")
+
+        df = pd.DataFrame(data=None, columns=['No.', 'Time', 'Source', 'Destination', 'Protocol', 'Length', 'Info'])
+
+        while(isAnalyzing):
+            packet = input()
+
+            # packet = "9,2.003091,10.0.0.45,224.0.0.22,IGMPv3,54,Membership Report / Join group 224.0.0.251 for any sources"
+
+            item = packet.split(",")
+            print(item)
+            df.loc[0, 'No.'] = item[0]
+            df.loc[0, 'Time'] = item[1]
+            df.loc[0, 'Source'] = item[2]
+            df.loc[0, 'Destination'] = item[3]
+            df.loc[0, 'Protocol'] = item[4]
+            df.loc[0, 'Length'] = item[5]
+            df.loc[0, 'Info'] = item[6]
+
+            predict_rt(df)
+
+    elif mode == 'file':
+        print(" == Batch File ==")
+
+        if not os.path.exists(DATA_PATH):
+            print(f"No packet data found at {DATA_PATH}")
+            return
+
+        df = pd.read_csv(DATA_PATH)
         df_clean = clean_data(df)
-        train_and_evaluate(df_clean)
 
-    print("\nStarting Predictions...")
+        if df_clean.empty:
+            print("No usable data after cleaning.")
+            return
 
-    if not os.path.exists(DATA_PATH):
-        print(f"No packet data found at {DATA_PATH}")
-        return
-
-    print("\nLoading new data to predict...")
-    df_new = pd.read_csv(DATA_PATH)
-    df_new_clean = clean_data(df_new)
-
-    if df_new_clean.empty:
-        print("No data after cleaning. Aborting...");
-        return
-    df_predicted = predict_packets(df_new_clean)
-
-    print(df_predicted)
-
-    # # when making predictions if a value is predicted as sus then it should send an alert
-    # for index, row in df_predicted.iterrows():
-    #
-    #     if int(row["Prediction"]) == 1:
-    #         print()
+        df_predicted = predict_packets(df_clean)
+        print(df_predicted)
 
 
 if __name__ == "__main__":
